@@ -1,106 +1,118 @@
 import java.util.ArrayList;
 public class Hashtable{
-	public HashNode[] buckets;
-	public int size;
+	public ArrayList<HashNode> buckets;
+	public int itemSize;
 	public int num_buckets;
-	public Hashtable(int num_buckets){
-		this.buckets = new HashNode[num_buckets];
-		this.num_buckets = num_buckets;
-		this.size = 0;
-	}
+
 	public Hashtable(){
-		this(10);
+		this(15);
 	}
-	public int getBucket(Object key){
-		int hashCode = key.hashCode();
-		return hashCode%num_buckets;
+	public Hashtable(int num_buckets){
+		this.buckets = new ArrayList<HashNode>(num_buckets);
+		this.num_buckets = num_buckets;
+		this.itemSize = 0;
+		for(int i = 0; i < num_buckets; i++){
+			buckets.add(null);
+		}
+	}
+	public int hashBucket(Object key){
+		return Math.abs(key.hashCode()%num_buckets);
 	}
 	public boolean containsKey(Object key){
-		if(size > 0){
-			if(buckets[getBucket(key)].equals(null)){
-				return false;
-			}
-			else if(buckets[getBucket(key)].key.equals(key)){
+		int bucketIndex = hashBucket(key);
+		HashNode node = buckets.get(bucketIndex);
+		while(node != null){
+			if(node.key.equals(key)){
 				return true;
 			}
+			node = node.next;
 		}
 		return false;
 	}
 	public Object get(Object key){
-		if(containsKey(key) && buckets[getBucket(key)].key.equals(key)){
-				return buckets[getBucket(key)].val;
-		}
-		else{
-			return null;
-		}
-	}
-	public void put(Object key, Object val){
-		if(size >= num_buckets){
-			doubleBuckets();
-			put(key,val);
-		}
-		else if(containsKey(key) && buckets[getBucket(key)].key.equals(key)){
-			buckets[getBucket(key)].changeVal(val);
-		}
-		else{
-			int bucket_id = getBucket(key);
-			HashNode node = new HashNode(key, val);
-			buckets[bucket_id] = node;
-			++size;
-		}
-	}
-	public Object remove(Object key){
-		int bucket_id = getBucket(key);
-		HashNode node = buckets[bucket_id];
-		if(containsKey(key) && buckets[getBucket(key)].key.equals(key)){
-			Object value = buckets[getBucket(key)].val;
-			buckets[getBucket(key)] = null;
-			size--;
-			return value;
+		if(containsKey(key)){
+			int bucketIndex = hashBucket(key);
+			HashNode node = buckets.get(bucketIndex);
+			while(node != null){
+				if(node.key.equals(key)){
+					return node.value;
+				}
+				node = node.next;
+			}
 		}
 		return null;
 	}
-	public void doubleBuckets(){
-		HashNode[] temp = new HashNode[num_buckets*2];
-		for(int i = 0; i < buckets.length; i++){
-			temp[i] = buckets[i];
-		}
-		buckets = temp;
-		num_buckets = num_buckets*2;
+	public void put(Object key, Object val){
+		HashNode node = new HashNode(key, val);
+		int bucketIndex = hashBucket(key);
+		node.next = buckets.get(bucketIndex);
+		buckets.set(bucketIndex,node);
+		itemSize++;
 	}
-	public static void main(String[] args){
-		Hashtable yo = new Hashtable();
-		Object key = "yikes";
-		Object val = "help";
-		for(int i = 0; i < yo.num_buckets; i++){
-			System.out.println(yo.buckets[i]);
+	public Object remove(Object key){
+		if(!containsKey(key)){
+			return null;
 		}
-		System.out.println(yo.getBucket(key));
-		yo.put(key,val);
-		yo.put("yikes","this sucks");
+		int bucketIndex = hashBucket(key);
+		HashNode node = buckets.get(bucketIndex);
+		HashNode prev = null;
+		while(node != null){
+			if(node.key.equals(key)){
+				break;
+			}
+			prev = node;
+			node = node.next;
+		}
+		if(node.equals(null)){
+			return null;
+		}
+		--itemSize;
+		if(prev == null){
+			buckets.set(bucketIndex,node.next);
+		}
+		else{
+			prev.next = node.next;
+		}
+		return node.value;
+	}
+
+	public static void main(String[] args){
+		Hashtable yo = new Hashtable(15);
+		String key = "Yikes";
+		String val = "help";
+		String falseKey = "Yookes";
+		// for(int i = 0; i < yo.num_buckets; i++){
+		// 	System.out.println(yo.buckets.get(i));
+		// }
+		System.out.println(yo.num_buckets);
+		System.out.println(yo.buckets.size());
+		System.out.println(key.hashCode());
+		System.out.println(yo.hashBucket(key));
+		yo.put(key, val);
 		System.out.println(yo.containsKey(key));
+		System.out.println(yo.containsKey(falseKey));
 		System.out.println(yo.get(key));
+		for(int i = 0; i < yo.num_buckets; i++){
+			System.out.println(yo.buckets.get(i));
+		}
 		System.out.println(yo.remove(key));
+		for(int i = 0; i < yo.num_buckets; i++){
+			System.out.println(yo.buckets.get(i));
+		}
+
 	}
 
 	public class HashNode{
 		public Object key;
-		public Object val;
-		public HashNode(Object key, Object val){
+		public Object value;
+		public HashNode next;
+		public HashNode(Object key, Object value){
 			this.key = key;
-			this.val = val;
+			this.value = value;
+			this.next = null;
 		}
-		public void changeKey(Object key){
-			this.key = key;
-		}
-		public void changeVal(Object val){
-			this.val = val;
-		}
-		public Object getVal(){
-			return this.val;
-		}
-		public Object getKey(){
-			return this.key;
+		public void changeValue(Object value){
+			this.value = value;
 		}
 	}
 }
